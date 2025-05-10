@@ -1,0 +1,54 @@
+{
+  "name": "apache-iceberg-sink",
+  "config": {
+    "connector.class": "org.apache.iceberg.connect.IcebergSinkConnector",
+    "topics": "flight-tickets-avro",
+    "tasks.max": "1",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://kafka-schema-registry:8082",
+    "value.converter.schemas.enable": "true",
+    "schemas.enable": "true",
+
+    "iceberg.catalog.authentication.type": "NONE",
+    "iceberg.catalog.catalog-impl": "org.apache.iceberg.nessie.NessieCatalog",
+    "iceberg.catalog.uri": "http://nessie:19120/api/v2",
+    "iceberg.catalog.ref": "main",
+    "iceberg.catalog.io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+
+    "iceberg.catalog.s3.endpoint": "http://minio:9000",
+    "iceberg.catalog.s3.secret-access-key": "minioadmin",
+    "iceberg.catalog.s3.access-key-id": "minioadmin",
+    "iceberg.catalog.s3.path-style-access": "true",
+    "iceberg.catalog.warehouse": "s3://warehouse/",
+    "iceberg.catalog.client.region": "us-east-1",
+
+    "transforms": "InsertPartition",
+    "transforms.InsertPartition.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.InsertPartition.partition.field": "kafka_partition",
+    "iceberg.tables": "analytics_apache.flight_tickets_upsert",
+    "iceberg.table.analytics_apache.flight_tickets_upsert.id-columns": "ticket_id",
+    "iceberg.table.analytics_apache.flight_tickets_upsert.partition-by": "kafka_partition",
+    "iceberg.tables.upsert-mode-enabled": "true",
+    "iceberg.tables.auto-create-enabled": "true",
+    "iceberg.partition.spec": "flight_number",
+
+    "iceberg.tables.include-metadata-fields": "true",
+    "iceberg.tables.default-partition-by": "kafka_partition",
+
+    "iceberg.tables.format-version": "2",
+
+    "iceberg.control.group-id": "flight_tickets_upsert_apache-cga",
+    "iceberg.control.commit.interval-ms": 3000,
+    "iceberg.control.commit.timeout-ms": 60000,
+
+    "iceberg.kafka.auto.offset.reset": "earliest",
+
+
+    "iceberg.tables.write.upsert.enabled": "true",
+    "iceberg.tables.write-props.write.upsert.enabled": "true",
+    "iceberg.tables.properties.write.upsert.enabled": "true",
+    "iceberg.tables.auto-create-props.format-version": "2"
+  }
+}

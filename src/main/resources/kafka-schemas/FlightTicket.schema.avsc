@@ -1,0 +1,142 @@
+{
+  "type": "record",
+  "name": "FlightTicketAvro",
+  "namespace": "edu.playground.avro",
+  "fields": [
+    {
+      "name": "ticket_uuid",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      },
+      "doc": "A unique identifier for this flight ticket."
+    },
+    {
+      "name": "ticket_id",
+      "type": "string",
+      "doc": "A human-readable ticket number, potentially not unique."
+    },
+    {
+      "name": "price",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 10,
+        "scale": 2
+      }
+    },
+    {
+      "name": "flight",
+      "type": {
+        "type": "record",
+        "name": "FlightDetails",
+        "fields": [
+          {
+            "name": "flight_number",
+            "type": "string"
+          },
+          {
+            "name": "departure_airport",
+            "type": "string"
+          },
+          {
+            "name": "arrival_airport",
+            "type": "string"
+          },
+          {
+            "name": "departure_time",
+            "type": {
+              "type": "long",
+              "logicalType": "timestamp-millis"
+            }
+          },
+          {
+            "name": "arrival_time",
+            "type": {
+              "type": "long",
+              "logicalType": "timestamp-millis"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "passenger",
+      "type": {
+        "type": "record",
+        "name": "Passenger",
+        "fields": [
+          {
+            "name": "first_name",
+            "type": "string"
+          },
+          {
+            "name": "last_name",
+            "type": "string"
+          },
+          {
+            "name": "date_of_birth",
+            "type": {
+              "type": "int",
+              "logicalType": "date"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "seat",
+      "type": "string"
+    },
+    {
+      "name": "baggage",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "Baggage",
+          "fields": [
+            {
+              "name": "weight_kg",
+              "type": {
+                "type": "bytes",
+                "logicalType": "decimal",
+                "precision": 5,
+                "scale": 3
+              }
+            },
+            {
+              "name": "type",
+              "type": {
+                "type": "enum",
+                "name": "BaggageType",
+                "symbols": [
+                  "CARRY_ON",
+                  "CHECKED",
+                  "Unknown"
+                ],
+                /*
+                 * Symbol default - for forwards compatibility -
+                 * new in Avro 1.9.0
+                 */
+                "default": "Unknown"
+              },
+              /*
+              * Field default - for handle backwards compatibility
+              */
+              "default": "Unknown"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "meal_preference",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    }
+  ]
+}

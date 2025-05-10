@@ -1,0 +1,259 @@
+x-common-variables: &aws_env
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
+
+services:
+  kafka-1:
+    image: apache/kafka:3.8.1
+    container_name: kafka-1
+    hostname: kafka-1
+    ports:
+      - "9092:19092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://kafka-1:9092,CONTROLLER://kafka-1:9093,EXTERNAL://0.0.0.0:19092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: [ 'CMD', '/opt/kafka/bin/kafka-topics.sh', '--bootstrap-server', 'kafka-1:9092', '--list' ]
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
+
+  kafka-2:
+    image: apache/kafka:3.8.1
+    container_name: kafka-2
+    hostname: kafka-2
+    ports:
+      - "9094:19094"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://kafka-2:9092,CONTROLLER://kafka-2:9093,EXTERNAL://0.0.0.0:19094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,EXTERNAL://localhost:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: [ 'CMD', '/opt/kafka/bin/kafka-topics.sh', '--bootstrap-server', 'kafka-2:9092', '--list' ]
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
+
+  kafka-3:
+    image: apache/kafka:3.8.1
+    container_name: kafka-3
+    hostname: kafka-3
+    ports:
+      - "9096:19096"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://kafka-3:9092,CONTROLLER://kafka-3:9093,EXTERNAL://0.0.0.0:19096
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,EXTERNAL://localhost:9096
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: [ 'CMD', '/opt/kafka/bin/kafka-topics.sh', '--bootstrap-server', 'kafka-3:9092', '--list' ]
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
+
+  kafka-schema-registry:
+    container_name: kafka-schema-registry
+    hostname: kafka-schema-registry
+    image: ghcr.io/aiven-open/karapace:4.1.1
+    ports:
+      - "8082:8082"
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+    entrypoint:
+      - /bin/bash
+      - /opt/karapace/start.sh
+      - registry
+    environment:
+      KARAPACE_BOOTSTRAP_URI: kafka-1:9092
+      KARAPACE_HOST: 0.0.0.0
+      KARAPACE_PORT: 8082
+      KARAPACE_MASTER_ELIGIBILITY: "true"
+      KARAPACE_LOG_LEVEL: WARNING
+      KARAPACE_CLIENT_ID: karapace
+      KARAPACE_GROUP_ID: karapace-registry
+      KARAPACE_TOPIC_NAME: _karapace_schemas
+
+      # Explicitly disable authentication
+      KARAPACE_AUTHENTICATION: "false"
+      KARAPACE_AUTHORIZATION: "false"
+
+  kafka-connect:
+    build:
+      context: .
+      dockerfile: kafka-connect/docker/Dockerfile
+      args:
+        KAFKA_VERSION: "3.6.2"
+        SCALA_VERSION: "2.12"
+    container_name: kafka-connect
+    environment:
+      <<: *aws_env
+    ports:
+      - "8083:8083"
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      install-apache-iceberg-sink-connector:
+        condition: service_completed_successfully
+      install-databricks-iceberg-sink-connector:
+        condition: service_completed_successfully
+    volumes:
+      - ./kafka-connect/docker/kafka-connect.properties:/opt/kafka/config/kafka-connect.properties:ro
+      - kafka-connect-3rd-party-plugins:/opt/kafka/plugins:ro
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8084:8080"
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-schema-registry:
+        condition: service_started
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "LocalKafka"
+      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: "kafka-1:9092"
+      KAFKA_CLUSTERS_0_SCHEMA_REGISTRY: "http://kafka-schema-registry:8082"
+
+  nessie:
+    image: projectnessie/nessie:latest
+    container_name: nessie
+    environment:
+      nessie.version.store.type: IN_MEMORY
+      nessie.catalog.default-warehouse: warehouse
+      nessie.catalog.warehouses.warehouse.location: s3://warehouse/
+      nessie.catalog.service.s3.default-options.endpoint: http://minioadmin:9000/
+      nessie.catalog.service.s3.default-options.path-style-access: true
+      nessie.catalog.secrets.access-key.name: minioadmin
+      nessie.catalog.secrets.access-key.secret: minioadmin
+      nessie.catalog.service.s3.default-options.region: us-east-1
+      nessie.server.authentication.enabled: false
+    depends_on:
+      - minio
+    ports:
+      - "19120:19120"
+
+  nessie-init:
+    image: curlimages/curl:latest
+    container_name: nessie-init
+    depends_on:
+      nessie:
+        condition: service_started
+    entrypoint: |
+      /bin/sh -c '
+        echo "Waiting for Nessie...";
+        until curl -s http://nessie:19120/api/v2/config > /dev/null; do
+          sleep 2;
+        done;
+        echo "Creating namespace analytics...";
+        curl -s -X PUT http://nessie:19120/api/v1/namespaces/namespace/main/analytics_apache \
+          -H "Content-Type: application/json" \
+          -d "{\"type\":\"NAMESPACE\",\"elements\":[\"analytics_apache\"],\"properties\":{\"description\":\"Apache namespace\"}}";
+        curl -s -X PUT http://nessie:19120/api/v1/namespaces/namespace/main/analytics_databricks \
+          -H "Content-Type: application/json" \
+          -d "{\"type\":\"NAMESPACE\",\"elements\":[\"analytics_databricks\"],\"properties\":{\"description\":\"Databricks namespace\"}}";
+        echo "Done.";
+      '
+
+  minio:
+    image: minio/minio
+    hostname: minio
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_DOMAIN=minio
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    command: ["server", "/data", "--console-address", ":9001"]
+
+  aws-cli:
+    image: amazon/aws-cli
+    container_name: aws-cli
+    command: |
+      -c "sleep 2 && \
+      aws --endpoint-url http://minio:9000 s3 mb s3://warehouse --region us-east-1 || exit 0"
+    entrypoint: [/bin/bash]
+    environment:
+      AWS_ACCESS_KEY_ID: "minioadmin"
+      AWS_SECRET_ACCESS_KEY: "minioadmin"
+    depends_on:
+      - minio
+
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino/iceberg.properties:/etc/trino/catalog/iceberg.properties:ro
+      - ./trino/config.properties:/etc/trino/config.properties
+    depends_on:
+      - nessie
+      - minio
+
+  install-apache-iceberg-sink-connector:
+    image: gradle:7.6-jdk17
+    container_name: install-apache-iceberg-sink-connector
+    volumes:
+      - maven-local-repo:/maven-local-repo
+      - kafka-connect-3rd-party-plugins:/kafka-connect-3rd-party-plugins
+      - ./kafka-connector-plugins/apache-sink-iceberg/install-apache-iceberg-sink-connector.sh:/usr/local/bin/install-sink-connector.sh:ro
+      - ./kafka-connector-plugins/apache-sink-iceberg/download-extra-dependencies.xml:/work-dir/extra-libs/download-extra-dependencies.xml:ro
+    entrypoint: [ "/usr/local/bin/install-sink-connector.sh" ]
+    restart: "no"
+
+  install-databricks-iceberg-sink-connector:
+    image: maven:3.9.9-eclipse-temurin-24-alpine
+    container_name: install-databricks-iceberg-sink-connector
+    environment:
+      ARTIFACT_VERSION: 0.6.19
+    volumes:
+      - maven-local-repo:/maven-local-repo
+      - kafka-connect-3rd-party-plugins:/kafka-connect-3rd-party-plugins
+      - ./kafka-connector-plugins/databricks-sink-iceberg/install-databricks-iceberg-sink-connector.sh:/usr/local/bin/install-sink-connector.sh:ro
+      - ./kafka-connector-plugins/databricks-sink-iceberg/download-extra-dependencies.xml:/work-dir/extra-libs/download-extra-dependencies.xml:ro
+    entrypoint: [ "/usr/local/bin/install-sink-connector.sh" ]
+    restart: "no"
+
+
+volumes:
+  kafka-connect-3rd-party-plugins:
+  maven-local-repo: # Local repository to speed the plugin installations
