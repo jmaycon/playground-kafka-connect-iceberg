@@ -23,8 +23,6 @@ docker compose up -d
 
 ### 2. Produce Messages to Kafka
 
-Use the Avro or JSON producer:
-
 - **Avro Producer** → [AvroProducer.java](src/main/java/edu/playground/AvroProducer.java)
 
 ### 3. Register Kafka S3 Sink Connector
