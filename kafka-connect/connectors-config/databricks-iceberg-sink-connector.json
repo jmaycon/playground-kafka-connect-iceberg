@@ -27,9 +27,9 @@
     "transforms": "InsertPartition",
     "transforms.InsertPartition.type": "org.apache.kafka.connect.transforms.InsertField$Value",
     "transforms.InsertPartition.partition.field": "kafka_partition",
-    "iceberg.tables": "analytics_databricks.flight_tickets_upsert",
-    "iceberg.table.analytics_databricks.flight_tickets_upsert.id-columns": "ticket_id",
-    "iceberg.table.analytics_databricks.flight_tickets_upsert.partition-by": "kafka_partition",
+    "iceberg.tables": "analytics_databricks.flight_tickets",
+    "iceberg.table.analytics_databricks.flight_tickets.id-columns": "ticket_id",
+    "iceberg.table.analytics_databricks.flight_tickets.partition-by": "kafka_partition",
     "iceberg.tables.upsert-mode-enabled": "true",
     "iceberg.tables.auto-create-enabled": "true",
     "iceberg.partition.spec": "flight_number",
@@ -40,7 +40,7 @@
     "iceberg.tables.format-version": "2",
 
 
-    "iceberg.control.group-id": "flight_tickets_upsert_databricks-cga",
+    "iceberg.control.group-id": "flight_tickets_databricks-cga",
     "iceberg.control.commit.interval-ms": 3000,
     "iceberg.control.commit.timeout-ms": 60000,
 
