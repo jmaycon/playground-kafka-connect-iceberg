@@ -219,6 +219,7 @@ services:
 
   trino:
     image: trinodb/trino:latest
+    hostname: trino
     container_name: trino
     ports:
       - "8080:8080"
@@ -253,7 +254,19 @@ services:
     entrypoint: [ "/usr/local/bin/install-sink-connector.sh" ]
     restart: "no"
 
-
+  hue:
+    image: gethue/hue:latest
+    container_name: hue
+    ports:
+      - "8888:8888"
+    environment:
+      - HUE_DATABASE_ENGINE=sqlite3
+      - HUE_IGNORE_PASSWORD_SCRIPT_ERRORS=True
+    volumes:
+      - ./hue/hue.ini:/usr/share/hue/desktop/conf/hue.ini
+    depends_on:
+      trino:
+        condition: service_started
 volumes:
   kafka-connect-3rd-party-plugins:
   maven-local-repo: # Local repository to speed the plugin installations

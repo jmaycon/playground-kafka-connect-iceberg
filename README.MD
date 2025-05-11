@@ -10,7 +10,6 @@ Enabling comparison between [Apache Iceberg (Official)](https://github.com/apach
 - **Docker & Docker Compose**
 - **Java 21**
 - **Maven**
-- **DBeaver**
 
 ## Getting Started
 
@@ -40,13 +39,9 @@ Use the script to manage connectors:
 
 ### 4. Perform queries
 
-Use [DBeaver](https://dbeaver.io/download/)
+Use [Hue](http://localhost:8888/hue/editor/?type=trino) (user/pass: `admin`)
 
-- JDBC URL: `jdbc:trino://localhost:8080`
-- Username: `admin`
-
-![dbeaver.png](docs/imgs/dbeaver.png)
-
+<img src="docs/imgs/hue-databricks-query.png" alt="hue-databricks-query" height="150"/>
 
 ## Architecture Overview
 
@@ -83,7 +78,7 @@ flowchart TB
   end
 
 %% Client
-  H["dbeaver"]
+  H["hue"]
 
 %% Connector output
   C -->|write metadata| N
@@ -112,3 +107,4 @@ flowchart TB
 - **Minio**: [localhost:9001](http://localhost:9001) (user/pass: `minioadmin`)
 - **Nessie**: [localhost:19120](http://localhost:19120)
 - **Trino**: [localhost:8080](http://localhost:8080) (user: `admin`)
+- **Hue**: [localhost:8888/](http://localhost:8888/) (user/pass: `admin`)
