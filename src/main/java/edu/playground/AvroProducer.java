@@ -1,9 +1,7 @@
 package edu.playground;
 
 
-import com.example.FlightTicket2;
 import edu.playground.avro.FlightTicketAvro;
-import edu.playground.util.AmazonWebServices;
 import edu.playground.util.FlightTicketAvroDataSample;
 import edu.playground.util.Kafka;
 import edu.playground.util.KafkaAvroProducer;
@@ -14,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 public class AvroProducer {
@@ -24,7 +21,6 @@ public class AvroProducer {
     @SneakyThrows
     public static void main(String[] args) {
 
-        //AmazonWebServices.createBucket("my-bucket");
         Kafka.createKafkaTopic(TOPIC_NAME);
         var schema = KafkaSchemas.flightTicketAvroSchema();
         KafkaSchemaRegistry.registerSchema(schema, TOPIC_NAME + "-value");
@@ -33,7 +29,7 @@ public class AvroProducer {
         for (int i = 0; i < 1000; i++) {
             FlightTicketAvro e = FlightTicketAvroDataSample.flightTicketRandomSample();
             e.setTicketId("TCKT43963_0"); // Same ticket id
-            e.setMealPreference(String.format("%4d cookies", i));
+            e.setMealPreference(String.format("%4d lunch", i));
             tickets.add(e);
         }
         KafkaAvroProducer.send(FlightTicketAvro::getTicketId, TOPIC_NAME, tickets);

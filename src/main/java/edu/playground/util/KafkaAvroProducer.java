@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
@@ -47,7 +45,7 @@ public final class KafkaAvroProducer {
             for (int i = 0; i < values.size(); i++) {
                 var value = values.get(i);
                 String key = keyExtractor.apply(value);
-                var record = new ProducerRecord<>(topicName, key, value);
+                ProducerRecord<String, T> record = new ProducerRecord<>(topicName, key, value);
                 var metadata = producer.send(record).get(); // Synchronously send message
                 log.info("Produced message to topic {} at partition {} offset {}",
                         metadata.topic(), metadata.partition(), metadata.offset());

@@ -3,8 +3,8 @@ package edu.playground.util;
 /*import edu.playground.avro.BaggageInfo;
 import edu.playground.avro.BaggageItem;
 import edu.playground.avro.BaggageType;*/
+
 import edu.playground.avro.Baggage;
-//import edu.playground.avro.BaggageType;
 import edu.playground.avro.BaggageType;
 import edu.playground.avro.FlightDetails;
 import edu.playground.avro.FlightTicketAvro;
@@ -17,7 +17,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
